@@ -1,0 +1,39 @@
+name: Sync JoyNow_Frontend_App
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Sync Bitbucket Repo
+        env:
+          BB_USER: ${{ secrets.BITBUCKET_USERNAME }}
+          BB_PASS: ${{ secrets.BITBUCKET_PASSWORD }}
+        run: |
+          mkdir -p repos/joynow_frontend_app
+          cd repos/joynow_frontend_app
+          
+          if [ -d ".git" ]; then
+            echo "Updating existing repo..."
+            git remote set-url origin "https://${BB_USER}:${BB_PASS}@bitbucket.org/appvertices/joynow_frontend_app.git"
+            git fetch --all --prune
+            git fetch --tags
+          else
+            echo "Cloning repo..."
+            git clone --mirror "https://${BB_USER}:${BB_PASS}@bitbucket.org/appvertices/joynow_frontend_app.git" .
+          fi
+      
+      - name: Push to GitHub
+        run: |
+          cd repos/joynow_frontend_app
+          git push --mirror https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/appverticesdevops/JoyNow_Frontend_App.git
